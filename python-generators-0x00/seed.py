@@ -1,61 +1,52 @@
 #!/usr/bin/python3
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+from psycopg2 import sql
 import csv
 import uuid
 
 
 def connect_db():
-    """Connect to MySQL server (no database selected)."""
+    """Connect to PostgreSQL (alx_prodev database)."""
     try:
-        print("trying to connect to MySQL server...")
-        connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="Sam@4892",
-            port=3306,
-            auth_plugin='mysql_native_password',
-            connection_timeout=5,
+        print("Trying to connect to PostgreSQL server...")
+        connection = psycopg2.connect(
+            host="127.0.0.1",
+            user="postgres",
+            password="48922000",
+            dbname="alx_prodev",
+            port=5432,
         )
-        print("onnection object:", connection)
-        if connection.is_connected():
-            print("Successfully connected to MySQL server")
-            return connection
+        print("✅ Successfully connected to PostgreSQL")
+        return connection
+    except Exception as e:
+        print(f"❌ Error while connecting to PostgreSQL: {e}")
+        return None
+
+
+def create_database():
+    """Create database alx_prodev if it doesn’t exist."""
+    try:
+        # connect without dbname, to postgres system db
+        conn = psycopg2.connect(
+            host="127.0.0.1",
+            user="postgres",
+            password="48922000",
+            dbname="postgres",
+            port=5432,
+        )
+        conn.autocommit = True
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM pg_database WHERE datname='alx_prodev';")
+        exists = cursor.fetchone()
+        if not exists:
+            cursor.execute("CREATE DATABASE alx_prodev;")
+            print("✅ Database alx_prodev created")
         else:
-            print("Connection to MySQL server created but failed")
-            return None
-    except Error as e:
-        print(f"Error while connecting to MySQL: {e}")
-        return None
-
-
-def create_database(connection):
-    """Create database ALX_prodev if it doesn’t exist."""
-    try:
-        cursor = connection.cursor()
-        cursor.execute("CREATE DATABASE IF NOT EXISTS ALX_prodev;")
+            print("ℹ️ Database alx_prodev already exists")
         cursor.close()
-        print("Database ALX_prodev created successfully (if not exists).")
-    except Error as e:
-        print(f"Error creating database: {e}")
-
-
-def connect_to_prodev():
-    """Reconnect but select the ALX_prodev database."""
-    try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            port=3306,
-            password="Sam@4892",
-            auth_plugin='mysql_native_password',
-            database="ALX_prodev"
-        )
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        print(f"Error while connecting to ALX_prodev: {e}")
-        return None
+        conn.close()
+    except Exception as e:
+        print(f"❌ Error creating database: {e}")
 
 
 def create_table(connection):
@@ -64,18 +55,17 @@ def create_table(connection):
         cursor = connection.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_data (
-                user_id CHAR(36) PRIMARY KEY,
+                user_id UUID PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) NOT NULL,
-                age DECIMAL NOT NULL,
-                INDEX(user_id)
+                age NUMERIC NOT NULL
             );
         """)
         connection.commit()
         cursor.close()
-        print("Table user_data created successfully")
-    except Error as e:
-        print(f"Error creating table: {e}")
+        print("✅ Table user_data created successfully")
+    except Exception as e:
+        print(f"❌ Error creating table: {e}")
 
 
 def insert_data(connection, csv_file):
@@ -97,8 +87,8 @@ def insert_data(connection, csv_file):
 
         connection.commit()
         cursor.close()
-        print("Data inserted successfully")
-    except Error as e:
-        print(f"Error inserting data: {e}")
+        print("✅ Data inserted successfully")
+    except Exception as e:
+        print(f"❌ Error inserting data: {e}")
     except FileNotFoundError:
-        print(f"CSV file {csv_file} not found")
+        print(f"❌ CSV file {csv_file} not found")

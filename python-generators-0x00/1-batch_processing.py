@@ -1,44 +1,38 @@
 #!/usr/bin/python3
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+import psycopg2.extras
 
-print("Importing batch processing module...")
 def stream_users_in_batches(batch_size):
-    print("Batch size:", batch_size)
     """
     Generator that streams rows from user_data in batches.
     Yields lists of rows (each of length <= batch_size).
     """
     try:
-        print("Trying to connect to MySQL server...")
-        connection = mysql.connector.connect(
+        print("Trying to connect to PostgreSQL server...")
+        connection = psycopg2.connect(
             host="localhost",
-            user="root",
-            password="Sam@4892",
-            database="ALX_prodev",
-            port=3306,
-            auth_plugin='mysql_native_password',
+            user="postgres",
+            password="48922000",
+            dbname="alx_prodev",
+            port=5432,
         )
-        print("Connection object:", connection)
+        print("✅ Successfully connected to PostgreSQL")
 
-        if connection.is_connected():
-            print("Successfully connected to MySQL server")
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM user_data;")
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM user_data;")
 
-            while True:
-                batch = cursor.fetchmany(batch_size)
-                if not batch:
-                    break
-                yield batch
+        while True:
+            batch = cursor.fetchmany(batch_size)
+            if not batch:
+                break
+            yield [dict(row) for row in batch] 
 
-            cursor.close()
-            connection.close()
+        cursor.close()
+        connection.close()
 
-    except Error as e:
-        print(f"Error while streaming batches: {e}")
+    except Exception as e:
+        print(f"❌ Error while streaming batches: {e}")
         return
-
 
 def batch_processing(batch_size):
     """
@@ -48,4 +42,8 @@ def batch_processing(batch_size):
     for batch in stream_users_in_batches(batch_size):
         print("Processing new batch of size:", len(batch))
         filtered = [user for user in batch if int(user["age"]) > 25]
-        yield filtered
+        print("Filtered users:", filtered)
+
+
+if __name__ == "__main__":
+    batch_processing(3) 
