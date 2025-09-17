@@ -2,32 +2,25 @@
 import psycopg2
 import functools
 
+
+# Decorator to log SQL queries
 def log_queries(func):
-    """
-    Decorator to log SQL queries before executing.
-    """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        query = None
-        if args:
-            query = args[0]
-        elif "query" in kwargs:
-            query = kwargs["query"]
-
-        if query:
-            print(f"[LOG] Executing SQL Query: {query}")
-
+        query = kwargs.get("query") if "query" in kwargs else (args[0] if args else None)
+        print(f"[LOG] Executing SQL query: {query}")
         return func(*args, **kwargs)
     return wrapper
 
 
 @log_queries
 def fetch_all_users(query):
+    # Open PostgreSQL connection
     conn = psycopg2.connect(
-        host="localhost",
         user="postgres",
         password="48922000",
-        dbname="alx_prodev",
+        database="alx_prodev",
+        host="localhost",
         port=5432
     )
     cursor = conn.cursor()
@@ -36,6 +29,8 @@ def fetch_all_users(query):
     conn.close()
     return results
 
+
+# Fetch users while logging the query
 if __name__ == "__main__":
     users = fetch_all_users(query="SELECT * FROM user_data;")
     print("Users:", users)
