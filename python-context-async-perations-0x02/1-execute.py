@@ -2,6 +2,7 @@
 import psycopg2
 
 
+
 class ExecuteQuery:
     """
     Context manager to execute a query with parameters
